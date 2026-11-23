@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src\GroveGames.Audio\GroveGames.Audio.csproj" />
+  <Project Path="tests\GroveGames.Audio.Tests\GroveGames.Audio.Tests.csproj" />
+</Solution>
