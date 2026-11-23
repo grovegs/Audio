@@ -4,7 +4,7 @@ using GroveGames.Tween;
 
 namespace GroveGames.Audio;
 
-public sealed class AudioPlayer<TClip> : IAudioPlayer<TClip>, IDisposable where TClip : class
+public class AudioPlayer<TClip> : IAudioPlayer<TClip>, IDisposable where TClip : class
 {
     private const float RelativeTolerance = 1e-6f;
     private const float AbsoluteTolerance = float.Epsilon * 8f;

@@ -12,7 +12,7 @@ namespace GroveGames.Audio.Unity
             builder.AddSingleton<IAudioOutput<AudioClip>>(resolver => resolver.Instantiate(settings.OutputPrefab));
             builder.AddSingleton(settings);
             builder.AddSingleton<IAudioSettings>(settings);
-            builder.AddSingleton<IAudioPlayer<AudioClip>, AudioPlayer<AudioClip>>();
+            builder.AddSingleton<IAudioPlayer<AudioClip>, UnityAudioPlayer>();
             return builder.AddSingleton(resolver => new AudioListenerActivation(resolver.Instantiate(settings.ListenerPrefab)));
         }
     }

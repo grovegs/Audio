@@ -13,7 +13,7 @@ Music and sound effect playback with playlists and fades for .NET and Unity
 - `IAudioOutput<TClip>`: the one thing an engine implements. `TClip` is the engine's clip type
 - `IPlaylist<TClip>` and `Playlist<TClip>`: a set of clips played in random order without repeating the current one
 - `IAudioSettings` and `AudioSettings`: the music fade duration
-- Unity: `UnityAudioOutput`, a `UnityPlaylist` asset and a `UnityAudioSettings` asset in Project Settings
+- Unity: `UnityAudioPlayer`, `UnityAudioOutput`, a `UnityPlaylist` asset and a `UnityAudioSettings` asset in Project Settings
 
 ## .NET
 
@@ -66,7 +66,7 @@ player.SetSfxVolume(0f);
 
 ### Usage
 
-With [GroveGames.DependencyInjection](https://github.com/grovegs/DependencyInjection) installed, `AddAudio()` registers `IAudioPlayer<AudioClip>`, `IAudioOutput<AudioClip>` and the settings, and creates the audio listener. The container must also have `IScheduler`, `ITweener` and `IRandomNumberGenerator`.
+With [GroveGames.DependencyInjection](https://github.com/grovegs/DependencyInjection) installed, `AddAudio()` registers `UnityAudioPlayer` as `IAudioPlayer<AudioClip>`, `UnityAudioOutput` as `IAudioOutput<AudioClip>` and the settings, and creates the audio listener. The container must also have `IScheduler`, `ITweener` and `IRandomNumberGenerator`.
 
 ```csharp
 using GroveGames.Audio;

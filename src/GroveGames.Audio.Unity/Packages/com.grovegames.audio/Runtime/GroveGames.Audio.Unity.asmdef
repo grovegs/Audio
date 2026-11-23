@@ -7,7 +7,10 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "GroveGames.Audio.dll"
+        "GroveGames.Audio.dll",
+        "GroveGames.Mathematics.dll",
+        "GroveGames.Scheduling.dll",
+        "GroveGames.Tween.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],
