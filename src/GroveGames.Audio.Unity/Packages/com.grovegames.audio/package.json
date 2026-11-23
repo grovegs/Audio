@@ -1,0 +1,25 @@
+{
+  "name": "com.grovegames.audio",
+  "version": "0.0.0",
+  "displayName": "GroveGames.Audio",
+  "description": "Music and sound effect playback with playlists and fades",
+  "unity": "2022.3",
+  "documentationUrl": "https://github.com/grovegs/Audio",
+  "changelogUrl": "https://github.com/grovegs/Audio/releases",
+  "licensesUrl": "https://github.com/grovegs/Audio/blob/main/LICENSE",
+  "keywords": [
+    "audio",
+    "music",
+    "sound",
+    "playlist"
+  ],
+  "author": {
+    "name": "Grove Games",
+    "url": "https://github.com/grovegs"
+  },
+  "dependencies": {
+    "com.grovegames.mathematics": "0.1.0",
+    "com.grovegames.scheduling": "0.1.1",
+    "com.grovegames.tween": "0.1.1"
+  }
+}

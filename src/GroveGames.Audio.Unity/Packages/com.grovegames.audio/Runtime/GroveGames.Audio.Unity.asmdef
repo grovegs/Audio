@@ -1,0 +1,16 @@
+{
+    "name": "GroveGames.Audio.Unity",
+    "rootNamespace": "GroveGames.Audio.Unity",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "GroveGames.Audio.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
