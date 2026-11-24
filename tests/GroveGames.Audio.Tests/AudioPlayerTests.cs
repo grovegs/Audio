@@ -22,7 +22,7 @@ public sealed class AudioPlayerTests
         }
     }
 
-    private sealed class TestAudioOutput : IAudioOutput<TestClip>
+    private sealed class FakeAudioOutput : IAudioOutput<TestClip>
     {
         private readonly List<TestClip> _playedSfx;
         private readonly List<float> _sfxVolumes;
@@ -43,7 +43,7 @@ public sealed class AudioPlayerTests
         public IReadOnlyList<TestClip> PlayedSfx => _playedSfx;
         public IReadOnlyList<float> SfxVolumes => _sfxVolumes;
 
-        public TestAudioOutput()
+        public FakeAudioOutput()
         {
             _playedSfx = [];
             _sfxVolumes = [];
@@ -93,14 +93,14 @@ public sealed class AudioPlayerTests
         }
     }
 
-    private readonly TestAudioOutput _output;
+    private readonly FakeAudioOutput _output;
     private readonly Scheduler _scheduler;
     private readonly Tweener _tweener;
     private readonly AudioPlayer<TestClip> _player;
 
     public AudioPlayerTests()
     {
-        _output = new TestAudioOutput();
+        _output = new FakeAudioOutput();
         _scheduler = new Scheduler();
         _tweener = new Tweener(static exception => throw exception);
         _player = new AudioPlayer<TestClip>(_output, new AudioSettings(FadeDuration), _scheduler, _tweener, new RandomNumberGenerator(1));
