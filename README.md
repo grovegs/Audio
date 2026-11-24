@@ -14,6 +14,7 @@ Music and sound effect playback with playlists and fades for .NET and Unity
 - `IPlaylist<TClip>` and `Playlist<TClip>`: a set of clips played in random order without repeating the current one
 - `IAudioSettings` and `AudioSettings`: the music fade duration
 - Unity: `UnityAudioPlayer`, `UnityAudioOutput`, a `UnityPlaylist` asset and a `UnityAudioSettings` asset in Project Settings
+- Test doubles for your own tests: `FakeAudioPlayer` in the editor-only `GroveGames.Audio.Unity.Testing` assembly
 
 ## .NET
 
