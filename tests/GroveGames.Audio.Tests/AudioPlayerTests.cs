@@ -9,27 +9,28 @@ public sealed class AudioPlayerTests
     private const float FadeDuration = 0.5f;
     private const float ClipDuration = 10f;
     private const float Step = 0.1f;
+    private const int SfxCapacity = 64;
 
-    private sealed class TestClip
+    private sealed class FakeClip
     {
         private readonly float _duration;
 
         public float Duration => _duration;
 
-        public TestClip(float duration)
+        public FakeClip(float duration)
         {
             _duration = duration;
         }
     }
 
-    private sealed class FakeAudioOutput : IAudioOutput<TestClip>
+    private sealed class FakeAudioOutput : IAudioOutput<FakeClip>
     {
-        private readonly List<TestClip> _playedSfx;
+        private readonly List<FakeClip> _playedSfx;
         private readonly List<float> _sfxVolumes;
         private float _musicVolume;
         private float _sfxVolume;
         private bool _musicLoop;
-        private TestClip? _music;
+        private FakeClip? _music;
         private int _playMusicCallCount;
         private int _stopSfxCallCount;
 
@@ -37,19 +38,19 @@ public sealed class AudioPlayerTests
         public bool MusicLoop => _musicLoop;
         public bool IsMusicPlaying => _music != null;
         public float SfxVolume => _sfxVolume;
-        public TestClip? Music => _music;
+        public FakeClip? Music => _music;
         public int PlayMusicCallCount => _playMusicCallCount;
         public int StopSfxCallCount => _stopSfxCallCount;
-        public IReadOnlyList<TestClip> PlayedSfx => _playedSfx;
+        public IReadOnlyList<FakeClip> PlayedSfx => _playedSfx;
         public IReadOnlyList<float> SfxVolumes => _sfxVolumes;
 
         public FakeAudioOutput()
         {
-            _playedSfx = [];
-            _sfxVolumes = [];
+            _playedSfx = new List<FakeClip>(SfxCapacity);
+            _sfxVolumes = new List<float>(SfxCapacity);
         }
 
-        public float GetDuration(TestClip clip)
+        public float GetDuration(FakeClip clip)
         {
             return clip.Duration;
         }
@@ -69,7 +70,7 @@ public sealed class AudioPlayerTests
             _sfxVolume = volume;
         }
 
-        public void PlayMusic(TestClip clip, bool loop)
+        public void PlayMusic(FakeClip clip, bool loop)
         {
             _music = clip;
             _musicLoop = loop;
@@ -81,7 +82,7 @@ public sealed class AudioPlayerTests
             _music = null;
         }
 
-        public void PlaySfx(TestClip clip, float volume)
+        public void PlaySfx(FakeClip clip, float volume)
         {
             _playedSfx.Add(clip);
             _sfxVolumes.Add(volume);
@@ -93,13 +94,13 @@ public sealed class AudioPlayerTests
         }
     }
 
-    private sealed class FakePlaylist : IPlaylist<TestClip>
+    private sealed class FakePlaylist : IPlaylist<FakeClip>
     {
-        private readonly List<TestClip> _clips;
+        private readonly List<FakeClip> _clips;
 
-        public IReadOnlyList<TestClip> Clips => _clips;
+        public IReadOnlyList<FakeClip> Clips => _clips;
 
-        public FakePlaylist(params TestClip[] clips)
+        public FakePlaylist(params FakeClip[] clips)
         {
             _clips = [.. clips];
         }
@@ -113,19 +114,30 @@ public sealed class AudioPlayerTests
         {
             _clips.RemoveRange(1, _clips.Count - 1);
         }
+
+        public void RemoveAt(int index)
+        {
+            _clips.RemoveAt(index);
+        }
+
+        public void Set(params FakeClip[] clips)
+        {
+            _clips.Clear();
+            _clips.AddRange(clips);
+        }
     }
 
     private readonly FakeAudioOutput _output;
     private readonly Scheduler _scheduler;
     private readonly Tweener _tweener;
-    private readonly AudioPlayer<TestClip> _player;
+    private readonly AudioPlayer<FakeClip> _player;
 
     public AudioPlayerTests()
     {
         _output = new FakeAudioOutput();
         _scheduler = new Scheduler();
         _tweener = new Tweener(static exception => throw exception);
-        _player = new AudioPlayer<TestClip>(_output, new AudioSettings(FadeDuration), _scheduler, _tweener, new RandomNumberGenerator(1));
+        _player = new AudioPlayer<FakeClip>(_output, new AudioSettings(FadeDuration), _scheduler, _tweener, new RandomNumberGenerator(1));
     }
 
     private void Advance(float seconds)
@@ -142,13 +154,13 @@ public sealed class AudioPlayerTests
     [Fact]
     public void Constructor_NullOutput_ThrowsArgumentNullException()
     {
-        Assert.Throws<ArgumentNullException>(() => new AudioPlayer<TestClip>(null!, new AudioSettings(FadeDuration), _scheduler, _tweener, new RandomNumberGenerator(1)));
+        Assert.Throws<ArgumentNullException>(() => new AudioPlayer<FakeClip>(null!, new AudioSettings(FadeDuration), _scheduler, _tweener, new RandomNumberGenerator(1)));
     }
 
     [Fact]
     public void Constructor_NullSettings_ThrowsArgumentNullException()
     {
-        Assert.Throws<ArgumentNullException>(() => new AudioPlayer<TestClip>(_output, null!, _scheduler, _tweener, new RandomNumberGenerator(1)));
+        Assert.Throws<ArgumentNullException>(() => new AudioPlayer<FakeClip>(_output, null!, _scheduler, _tweener, new RandomNumberGenerator(1)));
     }
 
     [Fact]
@@ -163,7 +175,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlayMusic_Clip_StartsItLoopingFromSilence()
     {
-        var clip = new TestClip(ClipDuration);
+        var clip = new FakeClip(ClipDuration);
 
         _player.PlayMusic(clip);
 
@@ -176,7 +188,7 @@ public sealed class AudioPlayerTests
     public void PlayMusic_Clip_FadesInToMusicVolume()
     {
         _player.SetMusicVolume(0.6f);
-        _player.PlayMusic(new TestClip(ClipDuration));
+        _player.PlayMusic(new FakeClip(ClipDuration));
 
         Advance(FadeDuration + Step);
 
@@ -186,7 +198,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlayMusic_SameClip_DoesNotRestartIt()
     {
-        var clip = new TestClip(ClipDuration);
+        var clip = new FakeClip(ClipDuration);
         _player.PlayMusic(clip);
 
         _player.PlayMusic(clip);
@@ -197,8 +209,8 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlayMusic_OtherClipWhilePlaying_FadesOutThenStartsIt()
     {
-        var first = new TestClip(ClipDuration);
-        var second = new TestClip(ClipDuration);
+        var first = new FakeClip(ClipDuration);
+        var second = new FakeClip(ClipDuration);
         _player.PlayMusic(first);
         Advance(FadeDuration + Step);
 
@@ -212,10 +224,10 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlayMusic_NullClip_StopsTheMusic()
     {
-        _player.PlayMusic(new TestClip(ClipDuration));
+        _player.PlayMusic(new FakeClip(ClipDuration));
         Advance(FadeDuration + Step);
 
-        _player.PlayMusic((TestClip?)null);
+        _player.PlayMusic((FakeClip?)null);
         Advance(FadeDuration + Step);
 
         Assert.False(_output.IsMusicPlaying);
@@ -224,7 +236,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlayMusic_Playlist_StartsOneOfItsClipsWithoutLoop()
     {
-        var playlist = new Playlist<TestClip>(new TestClip(ClipDuration), new TestClip(ClipDuration), new TestClip(ClipDuration));
+        var playlist = new Playlist<FakeClip>(new FakeClip(ClipDuration), new FakeClip(ClipDuration), new FakeClip(ClipDuration));
 
         _player.PlayMusic(playlist);
 
@@ -235,7 +247,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlayMusic_SamePlaylist_DoesNotRestartIt()
     {
-        var playlist = new Playlist<TestClip>(new TestClip(ClipDuration), new TestClip(ClipDuration));
+        var playlist = new Playlist<FakeClip>(new FakeClip(ClipDuration), new FakeClip(ClipDuration));
         _player.PlayMusic(playlist);
 
         _player.PlayMusic(playlist);
@@ -246,7 +258,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlayMusic_EmptyPlaylist_DoesNothing()
     {
-        _player.PlayMusic(new Playlist<TestClip>());
+        _player.PlayMusic(new Playlist<FakeClip>());
 
         Assert.False(_output.IsMusicPlaying);
     }
@@ -254,7 +266,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlayMusic_NullPlaylist_DoesNothing()
     {
-        _player.PlayMusic((IPlaylist<TestClip>?)null);
+        _player.PlayMusic((IPlaylist<FakeClip>?)null);
 
         Assert.False(_output.IsMusicPlaying);
     }
@@ -262,7 +274,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlayMusic_Playlist_AdvancesToAnotherClipBeforeTheCurrentOneEnds()
     {
-        var playlist = new Playlist<TestClip>(new TestClip(ClipDuration), new TestClip(ClipDuration), new TestClip(ClipDuration));
+        var playlist = new Playlist<FakeClip>(new FakeClip(ClipDuration), new FakeClip(ClipDuration), new FakeClip(ClipDuration));
         _player.PlayMusic(playlist);
         var first = _output.Music;
 
@@ -276,7 +288,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void NextMusic_WithPlaylist_NeverRepeatsTheCurrentClip()
     {
-        var playlist = new Playlist<TestClip>(new TestClip(ClipDuration), new TestClip(ClipDuration), new TestClip(ClipDuration));
+        var playlist = new Playlist<FakeClip>(new FakeClip(ClipDuration), new FakeClip(ClipDuration), new FakeClip(ClipDuration));
         _player.PlayMusic(playlist);
         Advance(FadeDuration + Step);
 
@@ -294,7 +306,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void NextMusic_WithoutPlaylist_DoesNothing()
     {
-        var clip = new TestClip(ClipDuration);
+        var clip = new FakeClip(ClipDuration);
         _player.PlayMusic(clip);
 
         _player.NextMusic();
@@ -307,7 +319,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void StopMusic_WhilePlaylistPlays_StopsAndDoesNotAdvance()
     {
-        _player.PlayMusic(new Playlist<TestClip>(new TestClip(ClipDuration), new TestClip(ClipDuration)));
+        _player.PlayMusic(new Playlist<FakeClip>(new FakeClip(ClipDuration), new FakeClip(ClipDuration)));
         Advance(FadeDuration + Step);
 
         _player.StopMusic();
@@ -319,7 +331,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void PlaySfx_Clip_PlaysAtFullVolume()
     {
-        var clip = new TestClip(1f);
+        var clip = new FakeClip(1f);
 
         _player.PlaySfx(clip);
 
@@ -333,7 +345,7 @@ public sealed class AudioPlayerTests
     [InlineData(3f, 1f)]
     public void PlaySfx_Volume_IsClamped(float volume, float expected)
     {
-        _player.PlaySfx(new TestClip(1f), volume);
+        _player.PlaySfx(new FakeClip(1f), volume);
 
         Assert.Equal(expected, Assert.Single(_output.SfxVolumes));
     }
@@ -351,7 +363,7 @@ public sealed class AudioPlayerTests
     {
         _player.SetSfxVolume(0f);
 
-        _player.PlaySfx(new TestClip(1f));
+        _player.PlaySfx(new FakeClip(1f));
 
         Assert.Empty(_output.PlayedSfx);
     }
@@ -382,7 +394,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void SetMusicVolume_Zero_StopsTheMusic()
     {
-        _player.PlayMusic(new TestClip(ClipDuration));
+        _player.PlayMusic(new FakeClip(ClipDuration));
         Advance(FadeDuration + Step);
 
         _player.SetMusicVolume(0f);
@@ -393,7 +405,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void SetMusicVolume_FromZero_RestartsTheMusic()
     {
-        var clip = new TestClip(ClipDuration);
+        var clip = new FakeClip(ClipDuration);
         _player.PlayMusic(clip);
         Advance(FadeDuration + Step);
         _player.SetMusicVolume(0f);
@@ -408,7 +420,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void SetMusicVolume_WhileMuted_KeepsRequestedMusicForLater()
     {
-        var clip = new TestClip(ClipDuration);
+        var clip = new FakeClip(ClipDuration);
         _player.SetMusicVolume(0f);
 
         _player.PlayMusic(clip);
@@ -421,7 +433,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void SetMusicVolume_AfterFade_AppliesImmediately()
     {
-        _player.PlayMusic(new TestClip(ClipDuration));
+        _player.PlayMusic(new FakeClip(ClipDuration));
         Advance(FadeDuration + Step);
 
         _player.SetMusicVolume(0.25f);
@@ -432,7 +444,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void Dispose_WhilePlaylistPlays_StopsAdvancing()
     {
-        _player.PlayMusic(new Playlist<TestClip>(new TestClip(ClipDuration), new TestClip(ClipDuration)));
+        _player.PlayMusic(new Playlist<FakeClip>(new FakeClip(ClipDuration), new FakeClip(ClipDuration)));
         Advance(FadeDuration + Step);
         var current = _output.Music;
 
@@ -446,7 +458,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void NextMusic_PlaylistLostClips_PlaysAClipItStillHas()
     {
-        var playlist = new FakePlaylist(new TestClip(ClipDuration), new TestClip(ClipDuration), new TestClip(ClipDuration));
+        var playlist = new FakePlaylist(new FakeClip(ClipDuration), new FakeClip(ClipDuration), new FakeClip(ClipDuration));
         _player.PlayMusic(playlist);
         Advance(FadeDuration + Step);
 
@@ -467,7 +479,7 @@ public sealed class AudioPlayerTests
     [Fact]
     public void NextMusic_PlaylistEmptied_StopsTheMusic()
     {
-        var playlist = new FakePlaylist(new TestClip(ClipDuration), new TestClip(ClipDuration));
+        var playlist = new FakePlaylist(new FakeClip(ClipDuration), new FakeClip(ClipDuration));
         _player.PlayMusic(playlist);
         Advance(FadeDuration + Step);
         playlist.Clear();
@@ -479,22 +491,22 @@ public sealed class AudioPlayerTests
     }
 
     [Fact]
-    public void Play_AfterWarmUp_DoesNotAllocate()
+    public void PlayMusicAndPlaySfx_AfterWarmUp_DoesNotAllocate()
     {
-        var first = new TestClip(ClipDuration);
-        var second = new TestClip(ClipDuration);
-        var sound = new TestClip(1f);
-        var playlist = new Playlist<TestClip>(first, second);
-        Play(first, second, sound, playlist);
+        var first = new FakeClip(ClipDuration);
+        var second = new FakeClip(ClipDuration);
+        var sound = new FakeClip(1f);
+        var playlist = new Playlist<FakeClip>(first, second);
+        PlayAndChange(first, second, sound, playlist);
 
         var before = GC.GetAllocatedBytesForCurrentThread();
-        Play(first, second, sound, playlist);
+        PlayAndChange(first, second, sound, playlist);
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
         Assert.Equal(0, allocated);
     }
 
-    private void Play(TestClip first, TestClip second, TestClip sound, Playlist<TestClip> playlist)
+    private void PlayAndChange(FakeClip first, FakeClip second, FakeClip sound, Playlist<FakeClip> playlist)
     {
         _player.PlayMusic(first);
         Advance(FadeDuration + Step);
@@ -511,5 +523,66 @@ public sealed class AudioPlayerTests
         Advance(FadeDuration + Step);
         _player.StopMusic();
         Advance(FadeDuration + Step);
+    }
+
+    [Fact]
+    public void NextMusic_PlaylistShiftedUnderTheCurrentClip_NeverRepeatsIt()
+    {
+        var repeats = 0;
+
+        for (var trial = 0; trial < 20; trial++)
+        {
+            var output = new FakeAudioOutput();
+            var scheduler = new Scheduler();
+            var tweener = new Tweener(static exception => throw exception);
+            var player = new AudioPlayer<FakeClip>(output, new AudioSettings(FadeDuration), scheduler, tweener, new RandomNumberGenerator((uint)trial + 1u));
+            var playlist = new FakePlaylist(new FakeClip(ClipDuration), new FakeClip(ClipDuration), new FakeClip(ClipDuration), new FakeClip(ClipDuration));
+            player.PlayMusic(playlist);
+            Advance(scheduler, tweener, FadeDuration + Step);
+
+            while (output.Music == playlist.Clips[0])
+            {
+                player.NextMusic();
+                Advance(scheduler, tweener, FadeDuration + Step);
+            }
+
+            var current = output.Music;
+            playlist.RemoveAt(0);
+            player.NextMusic();
+            Advance(scheduler, tweener, FadeDuration + Step);
+
+            if (output.Music == current)
+            {
+                repeats++;
+            }
+        }
+
+        Assert.Equal(0, repeats);
+    }
+
+    [Fact]
+    public void PlayMusic_PlaylistOfMissingClips_StopsSoTheSamePlaylistCanPlayLater()
+    {
+        var playlist = new FakePlaylist(null!, null!);
+        _player.PlayMusic(playlist);
+        Advance(FadeDuration + Step);
+        var clip = new FakeClip(ClipDuration);
+        playlist.Set(clip);
+
+        _player.PlayMusic(playlist);
+        Advance(FadeDuration + Step);
+
+        Assert.Same(clip, _output.Music);
+    }
+
+    private static void Advance(Scheduler scheduler, Tweener tweener, float seconds)
+    {
+        var steps = (int)MathF.Round(seconds / Step);
+
+        for (var i = 0; i < steps; i++)
+        {
+            scheduler.Update(Step, Step, Step);
+            tweener.Update(Step, Step, Step);
+        }
     }
 }

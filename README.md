@@ -40,7 +40,7 @@ player.SetSfxVolume(0f);
 ```
 
 - `output` is your `IAudioOutput<MyClip>`. The scheduler, tweener and random number generator come from [GroveGames.Scheduling](https://github.com/grovegs/Scheduling), [GroveGames.Tween](https://github.com/grovegs/Tween) and [GroveGames.Mathematics](https://github.com/grovegs/Mathematics).
-- `PlayMusic(clip)` loops one clip. `PlayMusic(playlist)` plays the playlist's clips in random order and moves on shortly before each one ends. Playing the clip or playlist that is already playing does nothing.
+- `PlayMusic(clip)` loops one clip. `PlayMusic(playlist)` plays the playlist's clips in random order and moves on shortly before each one ends. Playing the clip or playlist that is already playing does nothing. If a playlist reaches a missing clip, or has no clips left, the music stops.
 - A change of track fades the old one out and the new one in over `MusicFadeDuration`, in unscaled time.
 - Volumes are clamped to 0 to 1. A music volume of 0 stops the music and remembers it; raising the volume starts it again. A sound effect volume of 0 stops playing effects and ignores new ones.
 - `PlayMusic(null)` stops the music. `PlaySfx(null)` does nothing.

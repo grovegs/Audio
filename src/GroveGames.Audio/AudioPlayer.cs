@@ -87,7 +87,7 @@ public sealed class AudioPlayer<TClip> : IAudioPlayer<TClip>, IDisposable where 
         StopPlaylist();
         _playlist = playlist;
         _playlistIndex = _random.NextInt(clips.Count - 1);
-        ChangeMusic(clips[_playlistIndex], false);
+        PlayPlaylistClip(clips);
     }
 
     public void NextMusic()
@@ -105,17 +105,23 @@ public sealed class AudioPlayer<TClip> : IAudioPlayer<TClip>, IDisposable where 
             return;
         }
 
-        if (clips.Count > 1)
-        {
-            var candidate = _random.NextInt(clips.Count - 2);
-            _playlistIndex = candidate >= _playlistIndex ? candidate + 1 : candidate;
-        }
-        else
+        var current = GetCurrentIndex(clips);
+
+        if (clips.Count == 1)
         {
             _playlistIndex = 0;
         }
+        else if (current < 0)
+        {
+            _playlistIndex = _random.NextInt(clips.Count - 1);
+        }
+        else
+        {
+            var candidate = _random.NextInt(clips.Count - 2);
+            _playlistIndex = candidate >= current ? candidate + 1 : candidate;
+        }
 
-        ChangeMusic(clips[_playlistIndex], false);
+        PlayPlaylistClip(clips);
     }
 
     public void StopMusic()
@@ -242,6 +248,37 @@ public sealed class AudioPlayer<TClip> : IAudioPlayer<TClip>, IDisposable where 
         _playlistToken.Cancel();
         _playlistToken.Reset();
         _scheduler.Schedule(_nextMusic, Math.Max(0d, _output.GetDuration(_musicClip) - _musicFadeDuration), _playlistToken, TimeMode.Unscaled);
+    }
+
+    private void PlayPlaylistClip(IReadOnlyList<TClip> clips)
+    {
+        var clip = clips[_playlistIndex];
+
+        if (clip == null)
+        {
+            StopMusic();
+            return;
+        }
+
+        ChangeMusic(clip, false);
+    }
+
+    private int GetCurrentIndex(IReadOnlyList<TClip> clips)
+    {
+        if (_playlistIndex < clips.Count && clips[_playlistIndex] == _musicClip)
+        {
+            return _playlistIndex;
+        }
+
+        for (var i = 0; i < clips.Count; i++)
+        {
+            if (clips[i] == _musicClip)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private void StopPlaylist()
