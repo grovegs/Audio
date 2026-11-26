@@ -93,6 +93,28 @@ public sealed class AudioPlayerTests
         }
     }
 
+    private sealed class FakePlaylist : IPlaylist<TestClip>
+    {
+        private readonly List<TestClip> _clips;
+
+        public IReadOnlyList<TestClip> Clips => _clips;
+
+        public FakePlaylist(params TestClip[] clips)
+        {
+            _clips = [.. clips];
+        }
+
+        public void Clear()
+        {
+            _clips.Clear();
+        }
+
+        public void KeepFirst()
+        {
+            _clips.RemoveRange(1, _clips.Count - 1);
+        }
+    }
+
     private readonly FakeAudioOutput _output;
     private readonly Scheduler _scheduler;
     private readonly Tweener _tweener;
@@ -419,5 +441,75 @@ public sealed class AudioPlayerTests
 
         Assert.Same(current, _output.Music);
         Assert.Equal(1, _output.PlayMusicCallCount);
+    }
+
+    [Fact]
+    public void NextMusic_PlaylistLostClips_PlaysAClipItStillHas()
+    {
+        var playlist = new FakePlaylist(new TestClip(ClipDuration), new TestClip(ClipDuration), new TestClip(ClipDuration));
+        _player.PlayMusic(playlist);
+        Advance(FadeDuration + Step);
+
+        while (_output.Music == playlist.Clips[0])
+        {
+            _player.NextMusic();
+            Advance(FadeDuration + Step);
+        }
+
+        playlist.KeepFirst();
+
+        _player.NextMusic();
+        Advance(FadeDuration + Step);
+
+        Assert.Same(playlist.Clips[0], _output.Music);
+    }
+
+    [Fact]
+    public void NextMusic_PlaylistEmptied_StopsTheMusic()
+    {
+        var playlist = new FakePlaylist(new TestClip(ClipDuration), new TestClip(ClipDuration));
+        _player.PlayMusic(playlist);
+        Advance(FadeDuration + Step);
+        playlist.Clear();
+
+        _player.NextMusic();
+        Advance(FadeDuration + Step);
+
+        Assert.False(_output.IsMusicPlaying);
+    }
+
+    [Fact]
+    public void Play_AfterWarmUp_DoesNotAllocate()
+    {
+        var first = new TestClip(ClipDuration);
+        var second = new TestClip(ClipDuration);
+        var sound = new TestClip(1f);
+        var playlist = new Playlist<TestClip>(first, second);
+        Play(first, second, sound, playlist);
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        Play(first, second, sound, playlist);
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.Equal(0, allocated);
+    }
+
+    private void Play(TestClip first, TestClip second, TestClip sound, Playlist<TestClip> playlist)
+    {
+        _player.PlayMusic(first);
+        Advance(FadeDuration + Step);
+        _player.PlayMusic(second);
+        _player.PlaySfx(sound);
+        _player.PlaySfx(sound, 0.5f);
+        _player.SetMusicVolume(0.5f);
+        Advance(FadeDuration * 2f + Step);
+        _player.PlayMusic(playlist);
+        Advance(ClipDuration + Step);
+        _player.NextMusic();
+        _player.SetMusicVolume(0f);
+        _player.SetMusicVolume(1f);
+        Advance(FadeDuration + Step);
+        _player.StopMusic();
+        Advance(FadeDuration + Step);
     }
 }

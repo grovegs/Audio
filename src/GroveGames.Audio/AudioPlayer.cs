@@ -99,10 +99,20 @@ public sealed class AudioPlayer<TClip> : IAudioPlayer<TClip>, IDisposable where 
 
         var clips = _playlist.Clips;
 
+        if (clips.Count == 0)
+        {
+            StopMusic();
+            return;
+        }
+
         if (clips.Count > 1)
         {
             var candidate = _random.NextInt(clips.Count - 2);
             _playlistIndex = candidate >= _playlistIndex ? candidate + 1 : candidate;
+        }
+        else
+        {
+            _playlistIndex = 0;
         }
 
         ChangeMusic(clips[_playlistIndex], false);
