@@ -12,6 +12,12 @@ namespace GroveGames.Audio.Unity
         public bool IsMusicPlaying => _musicSource.isPlaying;
         public float SfxVolume => _sfxSource.volume;
 
+        internal void SetSources(AudioSource musicSource, AudioSource sfxSource)
+        {
+            _musicSource = musicSource;
+            _sfxSource = sfxSource;
+        }
+
         public float GetDuration(AudioClip clip)
         {
             return clip != null ? clip.length : 0f;
