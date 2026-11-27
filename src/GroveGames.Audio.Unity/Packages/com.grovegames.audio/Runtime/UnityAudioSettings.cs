@@ -13,7 +13,7 @@ namespace GroveGames.Audio.Unity
         [SerializeField, HideInInspector] private AudioListener _listenerPrefab;
         [SerializeField, HideInInspector] private UnityAudioOutput _outputPrefab;
 
-        public float MusicFadeDuration => _musicFadeDuration;
+        public float MusicFadeDuration => Mathf.Max(0f, _musicFadeDuration);
         public AudioListener ListenerPrefab => _listenerPrefab;
         public UnityAudioOutput OutputPrefab => _outputPrefab;
 
@@ -33,6 +33,7 @@ namespace GroveGames.Audio.Unity
 #endif
             if (s_instance == null)
             {
+                Debug.LogWarning("The audio settings asset was not found, so default audio settings are used.");
                 s_instance = CreateInstance<UnityAudioSettings>();
                 s_instance.hideFlags = HideFlags.DontSave;
             }
