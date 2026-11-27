@@ -25,6 +25,12 @@ namespace GroveGames.Audio.Unity
 
             Debug.LogError("The audio settings have no output prefab, so a default audio output is created.");
             var output = resolver.Instantiate<UnityAudioOutput>();
+
+            if (output == null)
+            {
+                return null;
+            }
+
             output.SetSources(CreateSource(output.gameObject), CreateSource(output.gameObject));
             return output;
         }

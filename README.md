@@ -93,7 +93,7 @@ public sealed class ShopController
 
 - Create a playlist with Assets > Create > GroveGames > Audio > Playlist and pass the `UnityPlaylist` to `PlayMusic`.
 - The music fade duration is in Project Settings > GroveGames > Audio. It is stored in `Assets/Settings/GroveGames/AudioSettings.asset`, a `UnityAudioSettings` that ships as a preloaded asset. A negative duration counts as zero. When the asset is missing, defaults are used with a warning.
-- `UnityAudioOutput` is a prefab with one audio source for music and one for sound effects. The settings asset points at it and at the listener prefab. When a prefab is missing, `AddAudio()` logs an error and creates a plain output or listener, so the game still starts.
+- `UnityAudioOutput` is a prefab with one audio source for music and one for sound effects. The settings asset points at it and at the listener prefab. When a prefab is missing, the output or listener logs an error when it is first resolved and is created without the prefab, so the game still starts.
 
 ## Development
 

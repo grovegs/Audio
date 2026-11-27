@@ -39,13 +39,19 @@ namespace GroveGames.Audio.Unity.Testing
         public int NextMusicCount => _nextMusicCount;
         public int StopMusicCount => _stopMusicCount;
 
-        public void PlayMusic(AudioClip clip)
+        public void PlayMusic(AudioClip? clip)
         {
             _music = clip;
+            _playlist = null;
         }
 
-        public void PlayMusic(IPlaylist<AudioClip> playlist)
+        public void PlayMusic(IPlaylist<AudioClip>? playlist)
         {
+            if (playlist == null || playlist.Clips == null || playlist.Clips.Count == 0)
+            {
+                return;
+            }
+
             _playlist = playlist;
         }
 
@@ -59,7 +65,7 @@ namespace GroveGames.Audio.Unity.Testing
             _stopMusicCount++;
         }
 
-        public void PlaySfx(AudioClip clip)
+        public void PlaySfx(AudioClip? clip)
         {
             if (clip == null)
             {
@@ -71,7 +77,7 @@ namespace GroveGames.Audio.Unity.Testing
             _sfxCount++;
         }
 
-        public void PlaySfx(AudioClip clip, float volume)
+        public void PlaySfx(AudioClip? clip, float volume)
         {
             if (clip == null)
             {
