@@ -42,6 +42,8 @@ player.SetSfxVolume(0f);
 - `output` is your `IAudioOutput<MyClip>`. The scheduler, tweener and random number generator come from [GroveGames.Scheduling](https://github.com/grovegs/Scheduling), [GroveGames.Tween](https://github.com/grovegs/Tween) and [GroveGames.Mathematics](https://github.com/grovegs/Mathematics).
 - `PlayMusic(clip)` loops one clip. `PlayMusic(playlist)` plays the playlist's clips in random order and moves on shortly before each one ends. Playing the clip or playlist that is already playing does nothing. If a playlist reaches a missing clip, or has no clips left, the music stops.
 - A change of track fades the old one out and the new one in over `MusicFadeDuration`, in unscaled time.
+- The next playlist clip is timed on the scheduler's unscaled clock, so long frame hitches can start it a little late and leave a short silence, while a paused app never skips a clip.
+- Muting the music stops it. Unmuting restarts the current clip from the beginning.
 - Volumes are clamped to 0 to 1. A music volume of 0 stops the music and remembers it; raising the volume starts it again. A sound effect volume of 0 stops playing effects and ignores new ones.
 - `PlayMusic(null)` stops the music. `PlaySfx(null)` does nothing.
 
@@ -90,8 +92,8 @@ public sealed class ShopController
 ```
 
 - Create a playlist with Assets > Create > GroveGames > Audio > Playlist and pass the `UnityPlaylist` to `PlayMusic`.
-- The music fade duration is in Project Settings > GroveGames > Audio. It is stored in `Assets/Settings/GroveGames/AudioSettings.asset`, a `UnityAudioSettings` that ships as a preloaded asset.
-- `UnityAudioOutput` is a prefab with one audio source for music and one for sound effects. The settings asset points at it and at the listener prefab.
+- The music fade duration is in Project Settings > GroveGames > Audio. It is stored in `Assets/Settings/GroveGames/AudioSettings.asset`, a `UnityAudioSettings` that ships as a preloaded asset. A negative duration counts as zero. When the asset is missing, defaults are used with a warning.
+- `UnityAudioOutput` is a prefab with one audio source for music and one for sound effects. The settings asset points at it and at the listener prefab. When a prefab is missing, the output or listener logs an error when it is first resolved and is created without the prefab, so the game still starts.
 
 ## Development
 
